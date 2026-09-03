@@ -1,13 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="htmlTag" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flash Marketplace</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
     body { background: #f3f4f6; color: #1f2937; padding-bottom: 50px; }
-    header { background: #111827; color: #fff; padding: 1.5rem; text-align: center; }
+    
+    /* Simplified header alignment for max visibility */
+    header { 
+      background: #111827; 
+      color: #fff; 
+      padding: 1rem 1.5rem; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+    }
+    header h1 { font-size: 1.5rem; }
+
+    .lang-toggle-btn {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.95rem;
+    }
+    .lang-toggle-btn:hover { background: #1d4ed8; }
+
     .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
     
     .admin-panel { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; display: none; }
@@ -15,6 +38,9 @@
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.85rem; }
     .form-group input, .form-group textarea { width: 100%; padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; }
+    
+    .file-upload-btn { display: block; width: 100%; padding: 0.8rem; background: #f3f4f6; border: 2px dashed #3b82f6; text-align: center; border-radius: 6px; cursor: pointer; color: #2563eb; font-weight: 600; }
+    .file-upload-btn:hover { background: #eff6ff; }
     
     .btn { background: #2563eb; color: white; border: none; padding: 0.7rem; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; font-size: 0.95rem; }
     .btn:hover { background: #1d4ed8; }
@@ -30,41 +56,42 @@
     .price { font-size: 1.2rem; color: #059669; font-weight: bold; margin: 0.4rem 0; }
     .desc { font-size: 0.88rem; color: #4b5563; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4; }
 
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 50; }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 200; }
     .modal { background: #fff; padding: 1.5rem; border-radius: 8px; width: 90%; max-width: 400px; position: relative; }
     .close { position: absolute; right: 12px; top: 10px; font-size: 1.5rem; cursor: pointer; border: none; background: none; }
-
-    footer { text-align: center; margin-top: 3rem; color: #9ca3af; }
-    .secret-admin { font-size: 8px; color: #9ca3af; text-decoration: none; cursor: pointer; user-select: none; }
+    html[dir="rtl"] .close { right: auto; left: 12px; }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>Online Store</h1>
+    <h1 id="txtStoreTitle">Online Store</h1>
+    <button class="lang-toggle-btn" id="langToggleBtn" onclick="toggleLanguage()">العربية</button>
   </header>
 
   <div class="container">
     <div id="adminPanel" class="admin-panel">
-      <h2>Admin Panel: Post Product</h2>
+      <h2 id="txtAdminTitle">Admin Panel: Post Product</h2>
       <form id="addProductForm">
         <div class="form-group">
-          <label>Product Title</label>
+          <label id="txtLblTitle">Product Title</label>
           <input type="text" id="pTitle" required>
         </div>
         <div class="form-group">
-          <label>Price ($)</label>
+          <label id="txtLblPrice">Price (EGP)</label>
           <input type="number" step="0.01" id="pPrice" required>
         </div>
         <div class="form-group">
-          <label>Image URL</label>
-          <input type="url" id="pImg" placeholder="https://..." required>
+          <label id="txtLblImg">Product Image</label>
+          <label for="pImgFile" class="file-upload-btn" id="txtBtnUpload">📷 Upload a picture/photo</label>
+          <input type="file" id="pImgFile" accept="image/*" style="display: none;" required onchange="updateFileName(this)">
+          <span id="fileNameDisplay" style="font-size: 0.8rem; color: #059669; display: block; margin-top: 0.3rem;"></span>
         </div>
         <div class="form-group">
-          <label>Description Paragraph</label>
+          <label id="txtLblDesc">Description Paragraph</label>
           <textarea id="pDesc" rows="3" required></textarea>
         </div>
-        <button type="submit" class="btn">Publish Globally</button>
+        <button type="submit" id="submitBtn" class="btn">Publish Globally</button>
       </form>
     </div>
 
@@ -74,65 +101,245 @@
 
   <div id="buyModal" class="modal-overlay">
     <div class="modal">
-      <button class="close" onclick="closeModal()">&times;</button>
-      <h3 style="margin-bottom: 1rem;">Order Item</h3>
+      <button class="close" onclick="closeModal('buyModal')">&times;</button>
+      <h3 style="margin-bottom: 1rem;" id="txtModalOrderTitle">Order Item</h3>
       <form id="whatsappForm">
         <input type="hidden" id="orderItemTitle">
         <input type="hidden" id="orderItemPrice">
 
         <div class="form-group">
-          <label>Full Name</label>
+          <label id="txtLblFullName">Full Name</label>
           <input type="text" id="custName" required>
         </div>
         <div class="form-group">
-          <label>Phone Number</label>
+          <label id="txtLblPhone">Phone Number</label>
           <input type="tel" id="custPhone" required>
         </div>
         <div class="form-group">
-          <label>Precise Location</label>
-          <textarea id="custLocation" rows="3" placeholder="Building, street, landmarks..." required></textarea>
+          <label id="txtLblLocation">Precise Location</label>
+          <textarea id="custLocation" rows="3" placeholder="Building, street, landmarks..." id="custLocationInput" required></textarea>
         </div>
-        <button type="submit" class="btn btn-whatsapp">Send Order to WhatsApp 🚀</button>
+        <button type="submit" id="txtBtnWhatsapp" class="btn btn-whatsapp">Send Order to WhatsApp 🚀</button>
       </form>
     </div>
   </div>
 
-  <footer>
-    <p>&copy; 2026 Store. <span class="secret-admin" onclick="adminLogin()">admin store</span></p>
+  <div id="adminModal" class="modal-overlay">
+    <div class="modal">
+      <button class="close" onclick="closeModal('adminModal')">&times;</button>
+      <h3 style="margin-bottom: 1rem;" id="txtModalAdminLogin">Admin Login</h3>
+      <form id="adminLoginForm">
+        <div class="form-group">
+          <label id="txtLblPass">Enter Password</label>
+          <input type="password" id="adminPassInput" placeholder="Password..." required>
+        </div>
+        <button type="submit" id="txtBtnUnlock" class="btn">Unlock Admin Panel</button>
+      </form>
+    </div>
+  </div>
+
+  <footer style="position: relative; z-index: 100; text-align: center; margin-top: 3rem; padding: 1.5rem;">
+    <p><span id="txtFooterRights">&copy; 2026 Store.</span> 
+      <button id="secretAdminBtn" style="background: none; border: none; font-size: 10px; color: #9ca3af; cursor: pointer; padding: 8px;">admin store</button>
+    </p>
   </footer>
 
   <script>
-    // Configured with your Egyptian WhatsApp number
     const OWNER_WHATSAPP_NUMBER = "201055474102"; 
+    
+    const PANTRY_ID = "de30daa2-04f2-41a8-a000-19c74951d4e0"; 
+    const PANTRY_URL = `https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/products`;
 
-    // Your active cloud database URL
-    const NPOINT_URL = "https://api.npoint.io/9c899efa5c7d9b55fd4f";
+    const IMGBB_API_KEY = "332c51186932a7ab19aa83c46b018066";
 
     let products = [];
     let isAdmin = false;
+    let currentLang = 'en';
 
-    // Fetch live inventory
-    async function loadProducts() {
-      try {
-        const res = await fetch(NPOINT_URL);
-        products = await res.json();
-        document.getElementById('loading').style.display = 'none';
+    const translations = {
+      en: {
+        storeTitle: "Online Store",
+        langBtn: "العربية",
+        adminTitle: "Admin Panel: Post Product",
+        lblTitle: "Product Title",
+        lblPrice: "Price (EGP)",
+        lblImg: "Product Image",
+        btnUpload: "📷 Upload a picture/photo",
+        lblDesc: "Description Paragraph",
+        btnPublish: "Publish Globally",
+        btnPublishing: "Uploading photo...",
+        loadingText: "Loading products...",
+        updatingText: "Updating store globally...",
+        noProducts: "No products in store yet.",
+        currency: "EGP",
+        btnBuy: "Buy Now",
+        btnDelete: "Delete Item",
+        modalOrderTitle: "Order Item",
+        lblFullName: "Full Name",
+        lblPhone: "Phone Number",
+        lblLocation: "Precise Location",
+        placeholderLocation: "Building, street, landmarks...",
+        btnWhatsapp: "Send Order to WhatsApp 🚀",
+        modalAdminLogin: "Admin Login",
+        lblPass: "Enter Password",
+        placeholderPass: "Password...",
+        btnUnlock: "Unlock Admin Panel",
+        footerRights: "© 2026 Store.",
+        alertUnlocked: "Admin Mode Unlocked!",
+        alertWrongPass: "Incorrect Password!",
+        alertSelectPhoto: "Please upload a photo!",
+        alertUploadFail: "Failed to upload image. Please try another photo.",
+        alertDeleteConfirm: "Delete this product for all users?",
+        selectedPrefix: "✓ Selected: "
+      },
+      ar: {
+        storeTitle: "المتجر الإلكتروني",
+        langBtn: "English",
+        adminTitle: "لوحة التحكم: إضافة منتج",
+        lblTitle: "عنوان المنتج",
+        lblPrice: "السعر (جنيه)",
+        lblImg: "صورة المنتج",
+        btnUpload: "📷 رفع صورة من الجهاز",
+        lblDesc: "وصف المنتج",
+        btnPublish: "نشر للمتجر",
+        btnPublishing: "جاري رفع الصورة...",
+        loadingText: "جاري تحميل المنتجات...",
+        updatingText: "جاري تحديث المتجر...",
+        noProducts: "لا توجد منتجات في المتجر حالياً.",
+        currency: "جنيه",
+        btnBuy: "شراء الآن",
+        btnDelete: "حذف المنتج",
+        modalOrderTitle: "إتمام الطلب",
+        lblFullName: "الاسم بالكامل",
+        lblPhone: "رقم الهاتف",
+        lblLocation: "العنوان التفصيلي",
+        placeholderLocation: "المبنى، الشارع، علامات مميزة...",
+        btnWhatsapp: "إرسال الطلب عبر واتساب 🚀",
+        modalAdminLogin: "تسجيل دخول الأدمن",
+        lblPass: "أدخل كلمة المرور",
+        placeholderPass: "كلمة المرور...",
+        btnUnlock: "فتح لوحة التحكم",
+        footerRights: "© 2026 جميع الحقوق محفوظة.",
+        alertUnlocked: "تم تفعيل وضع الأدمن!",
+        alertWrongPass: "كلمة المرور غير صحيحة!",
+        alertSelectPhoto: "يرجى اختيار صورة!",
+        alertUploadFail: "فشل رفع الصورة، يرجى المحاولة مرة أخرى.",
+        alertDeleteConfirm: "هل أنت تأكد من حذف هذا المنتج للجميع؟",
+        selectedPrefix: "✓ تم اختيار: "
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'ar' : 'en';
+      applyLanguage();
+    }
+
+    function applyLanguage() {
+      const t = translations[currentLang];
+      const html = document.getElementById('htmlTag');
+      html.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+      html.setAttribute('lang', currentLang);
+
+      document.getElementById('txtStoreTitle').innerText = t.storeTitle;
+      document.getElementById('langToggleBtn').innerText = t.langBtn;
+      document.getElementById('txtAdminTitle').innerText = t.adminTitle;
+      document.getElementById('txtLblTitle').innerText = t.lblTitle;
+      document.getElementById('txtLblPrice').innerText = t.lblPrice;
+      document.getElementById('txtLblImg').innerText = t.lblImg;
+      document.getElementById('txtBtnUpload').innerText = t.btnUpload;
+      document.getElementById('txtLblDesc').innerText = t.lblDesc;
+      document.getElementById('submitBtn').innerText = t.btnPublish;
+      document.getElementById('txtModalOrderTitle').innerText = t.modalOrderTitle;
+      document.getElementById('txtLblFullName').innerText = t.lblFullName;
+      document.getElementById('txtLblPhone').innerText = t.lblPhone;
+      document.getElementById('txtLblLocation').innerText = t.lblLocation;
+      document.getElementById('custLocation').placeholder = t.placeholderLocation;
+      document.getElementById('txtBtnWhatsapp').innerText = t.btnWhatsapp;
+      document.getElementById('txtModalAdminLogin').innerText = t.modalAdminLogin;
+      document.getElementById('txtLblPass').innerText = t.lblPass;
+      document.getElementById('adminPassInput').placeholder = t.placeholderPass;
+      document.getElementById('txtBtnUnlock').innerText = t.btnUnlock;
+      document.getElementById('txtFooterRights').innerText = t.footerRights;
+
+      renderProducts();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const adminBtn = document.getElementById("secretAdminBtn");
+      if (adminBtn) {
+        adminBtn.addEventListener("click", () => {
+          document.getElementById('adminModal').style.display = 'flex';
+        });
+      }
+    });
+
+    document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const t = translations[currentLang];
+      const pass = document.getElementById('adminPassInput').value;
+      if (pass === "admin123") {
+        isAdmin = true;
+        document.getElementById('adminPanel').style.display = 'block';
+        closeModal('adminModal');
         renderProducts();
-      } catch (err) {
-        document.getElementById('loading').innerText = 'Failed to load products.';
-        console.error(err);
+        alert(t.alertUnlocked);
+      } else {
+        alert(t.alertWrongPass);
+      }
+      document.getElementById('adminPassInput').value = '';
+    });
+
+    function updateFileName(input) {
+      const display = document.getElementById('fileNameDisplay');
+      const t = translations[currentLang];
+      if (input.files && input.files[0]) {
+        display.innerText = t.selectedPrefix + input.files[0].name;
+      } else {
+        display.innerText = "";
       }
     }
 
-    // Save live inventory to cloud
-    async function saveProductsToCloud() {
-      document.getElementById('loading').style.display = 'block';
-      document.getElementById('loading').innerText = 'Saving changes...';
+    async function uploadImageToImgBB(file) {
+      const formData = new FormData();
+      formData.append("image", file);
+      
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: "POST",
+        body: formData
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        return data.data.url;
+      } else {
+        throw new Error("Image upload failed");
+      }
+    }
+
+    async function loadProducts() {
       try {
-        await fetch(NPOINT_URL, {
+        const res = await fetch(PANTRY_URL);
+        if (!res.ok) throw new Error('New basket');
+        const data = await res.json();
+        products = data.items || [];
+        document.getElementById('loading').style.display = 'none';
+        renderProducts();
+      } catch (err) {
+        products = [];
+        document.getElementById('loading').style.display = 'none';
+        renderProducts();
+      }
+    }
+
+    async function saveProductsToCloud() {
+      const t = translations[currentLang];
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('loading').innerText = t.updatingText;
+      try {
+        await fetch(PANTRY_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(products)
+          body: JSON.stringify({ items: products })
         });
         document.getElementById('loading').style.display = 'none';
         renderProducts();
@@ -143,13 +350,103 @@
     }
 
     function renderProducts() {
+      const t = translations[currentLang];
       const grid = document.getElementById('productGrid');
+      if (products.length === 0) {
+        grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1; color: #6b7280;">${t.noProducts}</p>`;
+        return;
+      }
       grid.innerHTML = products.map(p => `
         <div class="product-card">
           <img src="${p.img}" alt="${p.title}" onerror="this.src='https://via.placeholder.com/300x180?text=No+Image'">
           <div class="product-info">
             <div class="product-title">${p.title}</div>
-            <div class="price">$${p.price}</div>
+            <div class="price">${p.price} ${t.currency}</div>
             <div class="desc">${p.desc}</div>
-            <button class="btn" onclick="openModal('${p.title}', '${p.price}')">Buy Now</button>
-            ${isAdmin ? `<button class="btn btn-danger" onclick="
+            <button class="btn" onclick="openBuyModal('${p.title}', '${p.price}')">${t.btnBuy}</button>
+            ${isAdmin ? `<button class="btn btn-danger" onclick="deleteProduct(${p.id})">${t.btnDelete}</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('addProductForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const t = translations[currentLang];
+      
+      const fileInput = document.getElementById('pImgFile');
+      if (!fileInput.files || !fileInput.files[0]) {
+        alert(t.alertSelectPhoto);
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = t.btnPublishing;
+
+      try {
+        const imageUrl = await uploadImageToImgBB(fileInput.files[0]);
+
+        const newProduct = {
+          id: Date.now(),
+          title: document.getElementById('pTitle').value,
+          price: parseFloat(document.getElementById('pPrice').value).toFixed(2),
+          img: imageUrl,
+          desc: document.getElementById('pDesc').value
+        };
+
+        products.push(newProduct);
+        document.getElementById('addProductForm').reset();
+        document.getElementById('fileNameDisplay').innerText = '';
+        await saveProductsToCloud();
+      } catch (err) {
+        alert(t.alertUploadFail);
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = t.btnPublish;
+      }
+    });
+
+    async function deleteProduct(id) {
+      const t = translations[currentLang];
+      if (confirm(t.alertDeleteConfirm)) {
+        products = products.filter(p => p.id !== id);
+        await saveProductsToCloud();
+      }
+    }
+
+    function openBuyModal(title, price) {
+      document.getElementById('orderItemTitle').value = title;
+      document.getElementById('orderItemPrice').value = price;
+      document.getElementById('buyModal').style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    document.getElementById('whatsappForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const item = document.getElementById('orderItemTitle').value;
+      const price = document.getElementById('orderItemPrice').value;
+      const name = document.getElementById('custName').value;
+      const phone = document.getElementById('custPhone').value;
+      const location = document.getElementById('custLocation').value;
+
+      const message = `🛒 *NEW ORDER!*%0A%0A` +
+                      `📦 *Product:* ${item}%0A` +
+                      `💵 *Price:* ${price} EGP%0A%0A` +
+                      `👤 *Name:* ${name}%0A` +
+                      `📞 *Phone:* ${phone}%0A` +
+                      `📍 *Location:* ${location}`;
+
+      window.open(`https://wa.me/${OWNER_WHATSAPP_NUMBER}?text=${message}`, '_blank');
+      closeModal('buyModal');
+      document.getElementById('whatsappForm').reset();
+    });
+
+    loadProducts();
+  </script>
+</body>
+</html>
