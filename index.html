@@ -48,11 +48,20 @@
       gap: 12px;
     }
 
-    .brand-logo {
-      height: 45px;
-      width: auto;
-      object-fit: contain;
-      border-radius: 4px;
+    /* Clean, un-cursed CSS logo badge */
+    .brand-logo-badge {
+      width: 42px;
+      height: 42px;
+      background: var(--primary-red);
+      color: #ffffff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(184, 0, 28, 0.3);
     }
 
     .brand-title {
@@ -203,8 +212,7 @@
 
   <header>
     <div class="brand-section">
-      <!-- Embedded Direct Base64 Image Link -->
-      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23b8001c'/><text x='50%' y='68%' font-size='60' font-family='Georgia, serif' font-weight='bold' fill='white' text-anchor='middle'>O</text></svg>" alt="ORZENA Logo" class="brand-logo">
+      <div class="brand-logo-badge">O</div>
       <div class="brand-title" id="txtStoreTitle">ORZENA</div>
     </div>
     <button class="settings-btn" onclick="openModal('settingsModal')">
