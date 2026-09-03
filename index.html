@@ -48,11 +48,10 @@
       gap: 12px;
     }
 
-    .brand-logo {
-      height: 45px;
+    .brand-logo-svg {
+      height: 48px;
       width: auto;
-      object-fit: contain;
-      border-radius: 4px;
+      display: block;
     }
 
     .brand-title {
@@ -203,7 +202,12 @@
 
   <header>
     <div class="brand-section">
-      <img src="https://i.ibb.co/C311Mpx8/WhatsApp-Image-2026-09-03-at-1-55-49-PM.jpg" alt="ORZENA Logo" class="brand-logo">
+      <!-- Embedded Inline SVG Logo -->
+      <svg class="brand-logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 75 105 C 50 100, 32 80, 32 55 C 32 30, 55 12, 90 12 C 120 12, 142 28, 145 52 L 128 52 C 125 38, 110 26, 90 26 C 66 26, 49 38, 49 55 C 49 72, 63 84, 88 88 L 75 105 Z" fill="#b8001c"/>
+        <path d="M 75 75 L 115 75 L 115 155 L 132 155 L 132 165 L 70 165 L 70 155 L 87 155 L 87 87 L 75 87 Z" fill="#b8001c"/>
+        <path d="M 115 75 C 135 75, 150 85, 150 100 C 150 112, 140 122, 125 125 L 158 165 L 138 165 L 115 125 L 115 75 Z" fill="#b8001c"/>
+      </svg>
       <div class="brand-title" id="txtStoreTitle">ORZENA</div>
     </div>
     <button class="settings-btn" onclick="openModal('settingsModal')">
