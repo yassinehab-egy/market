@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash Marketplace</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: #f3f4f6; color: #1f2937; padding-bottom: 50px; }
+    header { background: #111827; color: #fff; padding: 1.5rem; text-align: center; }
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    
+    .admin-panel { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; display: none; }
+    .admin-panel h2 { margin-bottom: 1rem; font-size: 1.2rem; color: #111827; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.85rem; }
+    .form-group input, .form-group textarea { width: 100%; padding: 0.6rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; }
+    
+    .btn { background: #2563eb; color: white; border: none; padding: 0.7rem; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; font-size: 0.95rem; }
+    .btn:hover { background: #1d4ed8; }
+    .btn-whatsapp { background: #25d366; }
+    .btn-whatsapp:hover { background: #1eb856; }
+    .btn-danger { background: #ef4444; margin-top: 0.5rem; }
+
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+    .product-card { background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; flex-direction: column; }
+    .product-card img { width: 100%; height: 180px; object-fit: cover; background: #e5e7eb; }
+    .product-info { padding: 1rem; flex-grow: 1; display: flex; flex-direction: column; }
+    .product-title { font-size: 1.1rem; font-weight: 700; }
+    .price { font-size: 1.2rem; color: #059669; font-weight: bold; margin: 0.4rem 0; }
+    .desc { font-size: 0.88rem; color: #4b5563; margin-bottom: 1rem; flex-grow: 1; line-height: 1.4; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 50; }
+    .modal { background: #fff; padding: 1.5rem; border-radius: 8px; width: 90%; max-width: 400px; position: relative; }
+    .close { position: absolute; right: 12px; top: 10px; font-size: 1.5rem; cursor: pointer; border: none; background: none; }
+
+    footer { text-align: center; margin-top: 3rem; color: #9ca3af; }
+    .secret-admin { font-size: 8px; color: #9ca3af; text-decoration: none; cursor: pointer; user-select: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Online Store</h1>
+  </header>
+
+  <div class="container">
+    <div id="adminPanel" class="admin-panel">
+      <h2>Admin Panel: Post Product</h2>
+      <form id="addProductForm">
+        <div class="form-group">
+          <label>Product Title</label>
+          <input type="text" id="pTitle" required>
+        </div>
+        <div class="form-group">
+          <label>Price ($)</label>
+          <input type="number" step="0.01" id="pPrice" required>
+        </div>
+        <div class="form-group">
+          <label>Image URL</label>
+          <input type="url" id="pImg" placeholder="https://..." required>
+        </div>
+        <div class="form-group">
+          <label>Description Paragraph</label>
+          <textarea id="pDesc" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn">Publish Globally</button>
+      </form>
+    </div>
+
+    <div id="loading" style="text-align: center; padding: 2rem;">Loading products...</div>
+    <div id="productGrid" class="product-grid"></div>
+  </div>
+
+  <div id="buyModal" class="modal-overlay">
+    <div class="modal">
+      <button class="close" onclick="closeModal()">&times;</button>
+      <h3 style="margin-bottom: 1rem;">Order Item</h3>
+      <form id="whatsappForm">
+        <input type="hidden" id="orderItemTitle">
+        <input type="hidden" id="orderItemPrice">
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="custName" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="custPhone" required>
+        </div>
+        <div class="form-group">
+          <label>Precise Location</label>
+          <textarea id="custLocation" rows="3" placeholder="Building, street, landmarks..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-whatsapp">Send Order to WhatsApp 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Store. <span class="secret-admin" onclick="adminLogin()">admin store</span></p>
+  </footer>
+
+  <script>
+    // Configured with your Egyptian WhatsApp number
+    const OWNER_WHATSAPP_NUMBER = "201055474102"; 
+
+    // Your active cloud database URL
+    const NPOINT_URL = "https://api.npoint.io/9c899efa5c7d9b55fd4f";
+
+    let products = [];
+    let isAdmin = false;
+
+    // Fetch live inventory
+    async function loadProducts() {
+      try {
+        const res = await fetch(NPOINT_URL);
+        products = await res.json();
+        document.getElementById('loading').style.display = 'none';
+        renderProducts();
+      } catch (err) {
+        document.getElementById('loading').innerText = 'Failed to load products.';
+        console.error(err);
+      }
+    }
+
+    // Save live inventory to cloud
+    async function saveProductsToCloud() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('loading').innerText = 'Saving changes...';
+      try {
+        await fetch(NPOINT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(products)
+        });
+        document.getElementById('loading').style.display = 'none';
+        renderProducts();
+      } catch (err) {
+        alert("Error saving items to cloud!");
+        console.error(err);
+      }
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      grid.innerHTML = products.map(p => `
+        <div class="product-card">
+          <img src="${p.img}" alt="${p.title}" onerror="this.src='https://via.placeholder.com/300x180?text=No+Image'">
+          <div class="product-info">
+            <div class="product-title">${p.title}</div>
+            <div class="price">$${p.price}</div>
+            <div class="desc">${p.desc}</div>
+            <button class="btn" onclick="openModal('${p.title}', '${p.price}')">Buy Now</button>
+            ${isAdmin ? `<button class="btn btn-danger" onclick="
